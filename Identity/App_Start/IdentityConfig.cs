@@ -33,18 +33,19 @@ namespace Identity
     }
 
     // Configure the application user manager used in this application. UserManager is defined in ASP.NET Identity and is used by the application.
-    public class ApplicationUserManager : UserManager<ApplicationUser>
+    public class BrahmanSecurityUserManager : UserManager<BrahmanSecurityUser, int>
     {
-        public ApplicationUserManager(IUserStore<ApplicationUser> store)
+        public BrahmanSecurityUserManager(IUserStore<BrahmanSecurityUser, int> store)
             : base(store)
         {
         }
 
-        public static ApplicationUserManager Create(IdentityFactoryOptions<ApplicationUserManager> options, IOwinContext context) 
+        public static BrahmanSecurityUserManager Create(IdentityFactoryOptions<BrahmanSecurityUserManager> options, IOwinContext context) 
         {
-            var manager = new ApplicationUserManager(new UserStore<ApplicationUser>(context.Get<ApplicationDbContext>()));
+            var manager = new BrahmanSecurityUserManager(new BrahmanSecurityUserStore(context.Get<BrahmanSecurityDbContext>()));
+
             // Configure validation logic for usernames
-            manager.UserValidator = new UserValidator<ApplicationUser>(manager)
+            manager.UserValidator = new UserValidator<BrahmanSecurityUser, int>(manager)
             {
                 AllowOnlyAlphanumericUserNames = false,
                 RequireUniqueEmail = true
@@ -67,11 +68,11 @@ namespace Identity
 
             // Register two factor authentication providers. This application uses Phone and Emails as a step of receiving a code for verifying the user
             // You can write your own provider and plug it in here.
-            manager.RegisterTwoFactorProvider("Phone Code", new PhoneNumberTokenProvider<ApplicationUser>
+            manager.RegisterTwoFactorProvider("Phone Code", new PhoneNumberTokenProvider<BrahmanSecurityUser, int>
             {
                 MessageFormat = "Your security code is {0}"
             });
-            manager.RegisterTwoFactorProvider("Email Code", new EmailTokenProvider<ApplicationUser>
+            manager.RegisterTwoFactorProvider("Email Code", new EmailTokenProvider<BrahmanSecurityUser, int>
             {
                 Subject = "Security Code",
                 BodyFormat = "Your security code is {0}"
@@ -82,28 +83,52 @@ namespace Identity
             if (dataProtectionProvider != null)
             {
                 manager.UserTokenProvider = 
-                    new DataProtectorTokenProvider<ApplicationUser>(dataProtectionProvider.Create("ASP.NET Identity"));
+                    new DataProtectorTokenProvider<BrahmanSecurityUser, int>(dataProtectionProvider.Create("ASP.NET Identity"));
             }
             return manager;
         }
     }
 
     // Configure the application sign-in manager which is used in this application.
-    public class ApplicationSignInManager : SignInManager<ApplicationUser, string>
+    public class BrahmanSecuritySignInManager : SignInManager<BrahmanSecurityUser, int>
     {
-        public ApplicationSignInManager(ApplicationUserManager userManager, IAuthenticationManager authenticationManager)
+        public BrahmanSecuritySignInManager(BrahmanSecurityUserManager userManager, IAuthenticationManager authenticationManager)
             : base(userManager, authenticationManager)
         {
         }
 
-        public override Task<ClaimsIdentity> CreateUserIdentityAsync(ApplicationUser user)
+        public override Task<ClaimsIdentity> CreateUserIdentityAsync(BrahmanSecurityUser user)
         {
-            return user.GenerateUserIdentityAsync((ApplicationUserManager)UserManager);
+            return user.GenerateUserIdentityAsync((BrahmanSecurityUserManager)UserManager);
         }
 
-        public static ApplicationSignInManager Create(IdentityFactoryOptions<ApplicationSignInManager> options, IOwinContext context)
+        public static BrahmanSecuritySignInManager Create(IdentityFactoryOptions<BrahmanSecuritySignInManager> options, IOwinContext context)
         {
-            return new ApplicationSignInManager(context.GetUserManager<ApplicationUserManager>(), context.Authentication);
+            return new BrahmanSecuritySignInManager(context.GetUserManager<BrahmanSecurityUserManager>(), context.Authentication);
         }
+    }
+
+
+    public class BrahmanSecurityUserStore : UserStore<BrahmanSecurityUser, BrahmanSecurityRole, int, BrahmanSecurityUserLogin, BrahmanSecurityUserRole, BrahmanSecurityUserClaim>, IUserStore<BrahmanSecurityUser, int>
+    {
+        /// <summary>
+        /// Initializes a new instance of the BrahmanSecurityUserStore
+        /// class using a new instance of the database context.
+        /// </summary>
+        public BrahmanSecurityUserStore()
+            : base(new BrahmanSecurityDbContext())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the BrahmanSecurityUserStore
+        /// class using an existing database context.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        public BrahmanSecurityUserStore(BrahmanSecurityDbContext context)
+            : base(context)
+        {
+        }
+
     }
 }
